@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DSA · animated exam</title>
+  <style>
+    /* minimal global reset & base */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: linear-gradient(145deg, #0b0f1c 0%, #1a1f2f 100%);
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      color: #eef3ff;
+    }
+
+    /* main card – glassmorphism + subtle glow */
+    .exam-container {
+      max-width: 1000px;
+      width: 100%;
+      background: rgba(18, 25, 45, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(90, 150, 255, 0.25);
+      border-radius: 2.5rem;
+      padding: 2rem 2rem 2rem 2rem;
+      box-shadow: 0 25px 50px -8px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(70, 130, 255, 0.2) inset;
+      transition: box-shadow 0.3s ease;
+    }
+
+    /* header row: proctor badge + progress */
+    .exam-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.75rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .proctor-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: rgba(220, 50, 80, 0.18);
+      border: 1px solid rgba(255, 80, 120, 0.5);
+      padding: 0.6rem 1.2rem;
+      border-radius: 40px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: #ffb0c0;
+      box-shadow: 0 0 12px rgba(255, 80, 120, 0.3);
+    }
+
+    .proctor-dot {
+      width: 10px;
+      height: 10px;
+      background: #ff4d6d;
+      border-radius: 50%;
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 #ff4d6d; }
+      70% { opacity: 0.8; transform: scale(1.1); box-shadow: 0 0 0 8px rgba(255, 77, 109, 0); }
+      100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 77, 109, 0); }
+    }
+
+    .progress-indicator {
+      background: rgba(0, 20, 50, 0.7);
+      padding: 0.6rem 1.4rem;
+      border-radius: 40px;
+      border: 1px solid #2e4a7a;
+      font-weight: 500;
+      color: #b8d0ff;
+      font-size: 0.9rem;
+      backdrop-filter: blur(4px);
+    }
+
+    .question-counter {
+      color: #9bbaff;
+      font-weight: 700;
+      margin-right: 0.3rem;
+    }
+
+    /* main question area */
+    .question-box {
+      background: rgba(10, 16, 30, 0.7);
+      border-radius: 2rem;
+      padding: 2rem 2rem 1.8rem;
+      border: 1px solid rgba(70, 130, 255, 0.25);
+      box-shadow: 0 8px 20px -6px #00000055, 0 0 0 1px #2f4b7a inset;
+      margin-bottom: 1.5rem;
+      transition: border-color 0.2s;
+    }
+
+    .question-text {
+      font-size: 1.6rem;
+      font-weight: 600;
+      line-height: 1.4;
+      margin-bottom: 1.8rem;
+      background: linear-gradient(to right, #ffffff, #c2dcff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: -0.02em;
+    }
+
+    /* the canvas / animation area */
+    .visual-canvas-wrapper {
+      background: #0b111f;
+      border-radius: 1.5rem;
+      padding: 1rem 0.5rem;
+      margin-bottom: 1.2rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 140px;
+      border: 1px solid #253a5c;
+      box-shadow: inset 0 0 20px #00000066, 0 6px 12px -6px #000000;
+    }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      max-height: 160px;
+      display: block;
+      border-radius: 12px;
+    }
+
+    /* answer choices grid */
+    .choices-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 1.5rem 0 1.8rem;
+    }
+
+    .choice-btn {
+      background: rgba(26, 36, 60, 0.9);
+      border: 1.5px solid #2f4b7a;
+      border-radius: 1.4rem;
+      padding: 1rem 1.2rem;
+      font-size: 1rem;
+      font-weight: 500;
+      color: #e2ecff;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 8px -2px #00000033;
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .choice-btn:hover:not(:disabled) {
+      background: #1f3355;
+      border-color: #5f8aff;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 18px -6px #00000066, 0 0 0 1px #4f7fff;
+    }
+
+    .choice-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      filter: grayscale(0.3);
+    }
+
+    .choice-btn.correct-highlight {
+      background: #0d3d2e;
+      border-color: #2ecc71;
+      box-shadow: 0 0 15px #2ecc7155;
+    }
+
+    .choice-btn.wrong-highlight {
+      background: #4a1a2a;
+      border-color: #e74c3c;
+      box-shadow: 0 0 15px #e74c3c55;
+    }
+
+    /* the little animated dot / bar inside each choice */
+    .choice-anim-dot {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      background: #3f6ac0;
+      flex-shrink: 0;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 8px #3f6ac0aa;
+    }
+
+    .choice-btn:hover:not(:disabled) .choice-anim-dot {
+      transform: scale(1.2) rotate(5deg);
+      background: #6b93ff;
+      box-shadow: 0 0 15px #6b93ff;
+    }
+
+    .choice-btn.correct-highlight .choice-anim-dot {
+      background: #2ecc71;
+      box-shadow: 0 0 18px #2ecc71;
+      animation: pop 0.4s ease;
+    }
+
+    .choice-btn.wrong-highlight .choice-anim-dot {
+      background: #e74c3c;
+      box-shadow: 0 0 18px #e74c3c;
+      animation: shake 0.4s ease;
+    }
+
+    @keyframes pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.5); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      75% { transform: translateX(4px); }
+      100% { transform: translateX(0); }
+    }
+
+    /* feedback & next button row */
+    .action-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .feedback-msg {
+      font-size: 1rem;
+      font-weight: 500;
+      padding: 0.7rem 1.4rem;
+      border-radius: 40px;
+      background: rgba(0, 0, 0, 0.3);
+      border-left: 5px solid #4f7fff;
+      color: #b8d0ff;
+      flex: 1;
+      transition: all 0.2s;
+      min-height: 3.5rem;
+      display: flex;
+      align-items: center;
+    }
+
+    .next-btn {
+      background: linear-gradient(135deg, #2e5ac0, #1d3d8a);
+      border: none;
+      border-radius: 60px;
+      padding: 1rem 2.5rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 10px 20px -6px #0a1a3a, 0 0 0 1px #5f8aff88;
+      transition: all 0.2s ease;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .next-btn:hover:not(:disabled) {
+      background: linear-gradient(135deg, #3a6ad4, #264fb3);
+      transform: scale(1.02);
+      box-shadow: 0 15px 25px -8px #0a1a3a, 0 0 0 2px #7fa2ff;
+    }
+
+    .next-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* finishing screen */
+    .result-screen {
+      text-align: center;
+      padding: 2rem 1rem;
+    }
+
+    .result-screen h2 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      background: linear-gradient(to right, #fff, #9bbaff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .score-big {
+      font-size: 5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #7fa2ff, #3f6ac0);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      margin: 0.5rem 0;
+      animation: glowScore 1.5s infinite alternate;
+    }
+
+    @keyframes glowScore {
+      from { text-shadow: 0 0 15px #3f6ac0; }
+      to { text-shadow: 0 0 35px #7fa2ff, 0 0 15px #3f6ac0; }
+    }
+
+    /* tab-switch warning overlay */
+    .proctor-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(10, 0, 10, 0.92);
+      backdrop-filter: blur(12px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      gap: 1.5rem;
+      z-index: 1000;
+      color: #ffb0b0;
+      font-size: 2rem;
+      font-weight: 700;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .proctor-overlay.active {
+      display: flex;
+    }
+
+    .proctor-overlay small {
+      font-size: 1.1rem;
+      color: #ff8a9a;
+      font-weight: 400;
+      max-width: 600px;
+    }
+
+    /* responsive */
+    @media (max-width: 700px) {
+      .exam-container { padding: 1.5rem; }
+      .question-text { font-size: 1.3rem; }
+      .choices-grid { grid-template-columns: 1fr; }
+      .action-row { flex-direction: column; }
+      .next-btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="exam-container" id="examContainer">
+    <!-- header -->
+    <div class="exam-header">
+      <div class="proctor-badge">
+        <span class="proctor-dot"></span> PROCTORED · DO NOT SWITCH TABS
+      </div>
+      <div class="progress-indicator" id="progressIndicator">
+        <span class="question-counter" id="currentQ">1</span> / <span id="totalQ">50</span>
+      </div>
+    </div>
+
+    <!-- dynamic question area -->
+    <div id="dynamicContent">
+      <div class="question-box">
+        <div class="question-text" id="questionText">Loading question...</div>
+        <div class="visual-canvas-wrapper">
+          <canvas id="visualCanvas" width="700" height="120"></canvas>
+        </div>
+        <div class="choices-grid" id="choicesGrid"></div>
+        <div class="action-row">
+          <div class="feedback-msg" id="feedbackMsg">Select an answer</div>
+          <button class="next-btn" id="nextBtn" disabled>Next →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- tab switch warning overlay -->
+  <div class="proctor-overlay" id="proctorOverlay">
+    ⚠️ TAB SWITCH DETECTED ⚠️
+    <small>This exam is proctored. Please return to the exam tab immediately. Violations may invalidate your score.</small>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
